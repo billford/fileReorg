@@ -1,0 +1,278 @@
+# 🔑 OpenAI API Key Troubleshooting Guide
+
+## 🚨 Common API Key Errors
+
+### Error 401: Invalid API Key
+
+**Symptoms:**
+```
+ERROR - Invalid OpenAI API key for filename.txt
+Error code: 401 - {'error': {'message': 'Incorrect API key provided'}}
+```
+
+**Causes & Solutions:**
+
+#### 1. **Malformed API Key**
+- **Problem**: API key doesn't start with `sk-` or `sk-proj-` or has wrong format
+- **Solution**: Get a fresh key from [OpenAI Platform](https://platform.openai.com/account/api-keys)
+
+#### 2. **New Project-Based Keys**
+- **Format**: OpenAI now issues longer project-based keys starting with `sk-proj-`
+- **Length**: ~164 characters (much longer than legacy ~48-51 character keys)
+- **Example**: `sk-proj-abc123...` (full length ~164 chars)
+
+#### 3. **Corrupted Copy/Paste**
+- **Problem**: Extra characters, spaces, or line breaks in the key
+- **Solution**: 
+  ```bash
+  # Check your key format
+  echo "Your key should look like: sk-1234567890abcdef..."
+  echo "Length should be 48-51 characters"
+  ```
+
+#### 3. **Key Contains Spaces or Special Characters**
+- **Problem**: Accidentally copied extra text with the key
+- **Solution**: Copy only the key part, no spaces or surrounding text
+
+#### 4. **Expired or Revoked Key**
+- **Problem**: Key was deleted or expired in OpenAI dashboard
+- **Solution**: Generate a new key at [OpenAI API Keys](https://platform.openai.com/account/api-keys)
+
+## ✅ **Quick Fixes**
+
+### 1. **Validate Your API Key Format**
+
+Run this test to check your key:
+
+```python
+def validate_api_key(key):
+    # Check prefix
+    if not (key.startswith('sk-') or key.startswith('sk-proj-')):
+        print("❌ Key must start with 'sk-' (legacy) or 'sk-proj-' (project-based)")
+        return False
+    
+    # Check length based on key type
+    if key.startswith('sk-proj-'):
+        if len(key) < 150 or len(key) > 200:
+            print(f"❌ Project key length ({len(key)}) is unusual (should be ~164)")
+            return False
+        print("✅ Project-based key format looks correct")
+    else:
+        if len(key) < 45 or len(key) > 60:
+            print(f"❌ Legacy key length ({len(key)}) is unusual (should be 48-51)")
+            return False
+        print("✅ Legacy key format looks correct")
+    
+    # Check for corruption
+    if ' ' in key or '\t' in key or '\n' in key:
+        print("❌ Key contains whitespace - likely corrupted")
+        return False
+    
+    return True
+
+# Test your key
+your_key = "sk-your-key-here"  # or "sk-proj-your-key-here"
+validate_api_key(your_key)
+```
+
+### 2. **Use Environment Variable (Recommended)**
+
+Set your API key as an environment variable:
+
+```bash
+# Add to your ~/.bashrc or ~/.zshrc
+export OPENAI_API_KEY="sk-your-actual-key-here"
+
+# Reload your shell
+source ~/.bashrc  # or ~/.zshrc
+
+# Run the organizer (will auto-detect the key)
+python file_organizer.py
+```
+
+### 3. **Test Your API Key Directly**
+
+Test your key with a simple script:
+
+```python
+import openai
+
+# Test your key
+client = openai.OpenAI(api_key="sk-your-key-here")
+
+try:
+    response = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[{"role": "user", "content": "Hello"}],
+        max_tokens=5
+    )
+    print("✅ API key works!")
+except Exception as e:
+    print(f"❌ API key test failed: {e}")
+```
+
+## 🔧 **Detailed Troubleshooting**
+
+### Step 1: Get a Fresh API Key
+
+1. Go to [OpenAI Platform](https://platform.openai.com/account/api-keys)
+2. Log in to your account
+3. Click **"Create new secret key"**
+4. **Choose key type**:
+   - **Legacy keys**: Start with `sk-`, ~48-51 characters (older format)
+   - **Project keys**: Start with `sk-proj-`, ~164 characters (newer format, more secure)
+5. Copy the key **immediately** (you can't see it again)
+6. Store it safely
+
+**Note**: Both key types work the same way - project keys are just OpenAI's newer, more secure format.
+
+### Step 2: Check Your Account Status
+
+Common account issues:
+- **No credits**: Check [Billing](https://platform.openai.com/account/billing)
+- **Usage limits**: Check [Usage](https://platform.openai.com/account/usage)
+- **Rate limits**: You might be hitting API limits
+
+### Step 3: Test with Minimal Example
+
+Create a test file `test_api.py`:
+
+```python
+#!/usr/bin/env python3
+import openai
+import os
+
+def test_openai_key():
+    # Try environment variable first
+    api_key = os.getenv('OPENAI_API_KEY')
+    if not api_key:
+        api_key = input("Enter your OpenAI API key: ").strip()
+    
+    print(f"Testing key: {api_key[:8]}{'*' * (len(api_key) - 8)}")
+    
+    try:
+        client = openai.OpenAI(api_key=api_key)
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": "Say 'test successful'"}],
+            max_tokens=10
+        )
+        print("✅ SUCCESS: API key is working!")
+        print(f"Response: {response.choices[0].message.content}")
+        return True
+    except Exception as e:
+        print(f"❌ FAILED: {e}")
+        return False
+
+if __name__ == "__main__":
+    test_openai_key()
+```
+
+Run it:
+```bash
+python test_api.py
+```
+
+### Step 4: Check File Organizer Logs
+
+Look at the detailed logs:
+
+```bash
+# Check the latest log file
+ls -la ~/FileOrganizer_Logs/
+tail -f ~/FileOrganizer_Logs/file_organizer_*.log
+```
+
+## 🛠️ **Advanced Solutions**
+
+### Using Different API Key Methods
+
+#### Method 1: Command Line Argument
+```bash
+python file_organizer.py --api-key sk-your-key-here
+```
+
+#### Method 2: Environment Variable
+```bash
+export OPENAI_API_KEY="sk-your-key-here"
+python file_organizer.py
+```
+
+#### Method 3: Interactive Input
+```bash
+python file_organizer.py
+# Enter key when prompted
+```
+
+### Handling Multiple Keys
+
+If you have multiple OpenAI accounts:
+
+```bash
+# Use specific key for this session
+OPENAI_API_KEY="sk-work-key" python file_organizer.py
+
+# Or specify directly
+python file_organizer.py --api-key sk-personal-key
+```
+
+## 🚫 **Disable AI if Needed**
+
+If you can't get the API key working, you can still use the file organizer:
+
+```bash
+# Organize files without AI (basic categorization only)
+python file_organizer.py --no-ai
+```
+
+## 📊 **Error Code Reference**
+
+| Error Code | Meaning | Solution |
+|------------|---------|----------|
+| **401** | Invalid API key | Get new key from OpenAI |
+| **429** | Rate limit exceeded | Wait or upgrade plan |
+| **400** | Bad request | Check your OpenAI account |
+| **403** | Forbidden | Check billing/account status |
+| **500** | OpenAI server error | Try again later |
+
+## 🔍 **Debug Mode**
+
+Run with enhanced logging to see exactly what's happening:
+
+```python
+# Add to the top of file_organizer.py temporarily
+import logging
+logging.basicConfig(level=logging.DEBUG)
+```
+
+## 🆘 **Still Having Issues?**
+
+### Check These:
+
+1. **OpenAI Account Status**: 
+   - Visit [OpenAI Platform](https://platform.openai.com)
+   - Check billing and usage
+
+2. **Network/Firewall**: 
+   - Corporate firewall might block OpenAI API
+   - Try from a different network
+
+3. **Python Environment**:
+   ```bash
+   pip install --upgrade openai
+   python -c "import openai; print(openai.__version__)"
+   ```
+
+4. **File Organizer Version**:
+   - Make sure you have the latest version with the API key fixes
+
+### Get Help:
+
+1. **Check the logs** in `~/FileOrganizer_Logs/`
+2. **Run the API key test** script above
+3. **Try without AI** using `--no-ai` flag
+4. **Verify on OpenAI's side** that your key works
+
+---
+
+**Remember: The file organizer works great even without AI - you'll just get basic file categorization instead of intelligent naming!** 🗂️%   
