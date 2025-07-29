@@ -40,6 +40,7 @@ jobs:
         pip install flake8 pytest pytest-mock
         pip install python-magic Pillow openai PyPDF2
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        if [ -f requirements-test.txt ]; then pip install -r requirements-test.txt; fi
 
     # STEP 5: Set Python path for imports (AFTER checkout and setup)
     - name: Set Python path for imports
@@ -64,4 +65,12 @@ jobs:
     # STEP 8: Test with pytest
     - name: Test with pytest
       run: |
-        pytest tests/test_unit_tests.py -v --tb=short
+        # Run tests from the tests directory
+        if [ -f "tests/test_unit_tests.py" ]; then
+          pytest tests/test_unit_tests.py -v --tb=short
+        elif [ -f "test_file_organizer.py" ]; then
+          pytest test_file_organizer.py -v --tb=short
+        else
+          echo "No test file found, running pytest discovery"
+          pytest -v --tb=short
+        fi
